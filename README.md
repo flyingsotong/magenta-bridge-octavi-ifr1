@@ -12,6 +12,10 @@ replacement for it, and not affiliated with or endorsed by Octavi.
 **Download:** [latest release](https://github.com/flyingsotong/magenta-bridge-octavi-ifr1/releases/latest)
 — Windows 11, self-contained, no installer and no .NET runtime required.
 
+Screenshots, the FAQ and the full comparison live at
+[magentadebrief.com/magenta-bridge](https://magentadebrief.com/magenta-bridge/). The panel itself
+was reviewed on Magenta Debrief: [Octavi IFR-1 review](https://magentadebrief.com/octavi-ifr-1-review-a-premium-radio-panel-with-real-world-compromises-2026/).
+
 Magenta Bridge is a family of per-device clients. This one is for the Octavi IFR-1; each
 product installs alongside the others, with its own settings folder and its own entry in the
 taskbar, so they never collide.
@@ -50,11 +54,11 @@ Being a replacement isn't a feature, so here is what is actually different.
 |---|---|---|
 | **NAV1 / NAV2 standby tuning** | The knob re-sends the frequency the sim just reported, so the value cannot move | Accumulates the pending frequency locally, so every detent changes it |
 | **Transponder mode** (OFF/SBY/TST/ON/ALT) | Not in the client | Shift + knob cycles it, clamped at both ends like the real selector |
-| **Seeing what it's doing** | Nothing on screen; a tray process only | Live radio stack, AP lamps, mode, dial positions |
+| **Seeing what it's doing** | No window of its own | Live radio stack, AP lamps, mode, dial positions |
 | **Proving the panel works** | — | *Test your panel* walks you through every control and ticks them off |
-| **When something can't work** | Fails silently | Says why, in the window and the log (VS ignored by this aircraft, CDI on GPS, panel not answering) |
-| **Two clients competing** | Silent dead controls | Detects Octavi's plug-in and offers to close it |
-| **Windows 11** | Fixed bitmap UI, scaled at 150% | Per-monitor DPI, dark and light palettes, custom chrome |
+| **When something can't work** | No error reporting | Says why, in the window and the log (VS ignored by this aircraft, CDI on GPS, panel not answering) |
+| **Two clients competing** | Controls stop responding | Detects Octavi's plug-in and offers to close it |
+| **Windows 11** | Fixed-size bitmap UI | Per-monitor DPI, dark and light palettes, custom chrome |
 | **Remapping** | Fixed | JSON config: per-mode bindings, device selected by serial |
 | **Long knob turns** | One click, one step | Accelerates with turn speed |
 | **MobiFlight** | Required for FMS | Not required at all |
@@ -143,7 +147,7 @@ base class library plus Win32/SimConnect interop.
 cover every mapping, the shift latch, NAV accumulation, transponder clamping and the
 AP altitude/VS split.
 
-## Licence
+## License
 
 MIT. See [LICENSE](LICENSE). Use it, fork it, ship it, ignore it — no permission needed.
 
