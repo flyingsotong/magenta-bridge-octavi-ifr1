@@ -90,7 +90,7 @@ public sealed class AppConfig
     /// A config written by an older build is archived and regenerated rather than half-merged,
     /// which is what previously left mode 7 without its transponder-mode shift binding.
     /// </summary>
-    public const int CurrentVersion = 6;
+    public const int CurrentVersion = 7;
 
     public int Version { get; set; } = CurrentVersion;
 
@@ -189,6 +189,8 @@ public sealed class AppConfig
         var target = path ?? DefaultPath;
         if (path == null) AdoptLegacyFolder(target);
 
+        AppConfig? stale = null;
+
         if (File.Exists(target))
         {
             try
@@ -208,6 +210,7 @@ public sealed class AppConfig
 
                         Log.Warn($"config version {loaded.Version} is older than {CurrentVersion}; " +
                                  "archived and regenerated with current defaults");
+                        stale = loaded;
                     }
                     else
                     {
@@ -243,9 +246,29 @@ public sealed class AppConfig
 
         var created = CreateDefault();
         created.Path = target;
+
+        // Regenerating because the version moved must not cost the user their choices. Only the
+        // bindings are rebuilt; theme, startup, the pinned device and logging are carried over.
+        if (stale != null)
+        {
+            CarryPreferences(stale, created);
+            Log.Info("kept theme, startup, device and logging preferences from the archived config");
+        }
+
         try { created.Save(); }
         catch (Exception ex) { Log.Error("could not write default config", ex); }
         return created;
+    }
+
+    private static void CarryPreferences(AppConfig from, AppConfig to)
+    {
+        to.Theme = from.Theme;
+        to.StartWithWindows = from.StartWithWindows;
+        to.WelcomeDismissed = from.WelcomeDismissed;
+        to.AlwaysOnTop = from.AlwaysOnTop;
+        if (from.Device != null) to.Device = from.Device;
+        if (from.Logging != null) to.Logging = from.Logging;
+        if (from.SimConnect != null) to.SimConnect = from.SimConnect;
     }
 
     public void Save(string? path = null)
@@ -392,30 +415,36 @@ public sealed class AppConfig
         };
 
         // Mode 4 — FMS1 (GNS530 / PFD). Manual: 6 lower buttons are CDI - PROC.
+        //
+        // The "H:" prefix means the name is a gauge event, not a sim event: it goes to our
+        // WASM module over the CommBus, which calls it inside the sim. These are the buttons
+        // no SimConnect client can reach, and the reason the vendor's manual points at
+        // MobiFlight. Both the GNS name and the G1000 name are sent on every action; the one
+        // that does not exist in the loaded aircraft is ignored by the sim.
         cfg.Modes["4"] = new ModeBinding
         {
             Label = "FMS1",
-            Dial1 = Paired("MobiFlight.AS530_RightLargeKnob_Right", "MobiFlight.AS1000_PFD_FMS_Lower_INC",
-                           "MobiFlight.AS530_RightLargeKnob_Left", "MobiFlight.AS1000_PFD_FMS_Lower_DEC"),
-            Dial2 = Paired("MobiFlight.AS530_RightSmallKnob_Right", "MobiFlight.AS1000_PFD_FMS_Upper_INC",
-                           "MobiFlight.AS530_RightSmallKnob_Left", "MobiFlight.AS1000_PFD_FMS_Upper_DEC"),
-            ShiftDial1 = Paired("MobiFlight.AS530_RNG_Zoom", "MobiFlight.AS1000_PFD_RANGE_INC",
-                                "MobiFlight.AS530_RNG_Dezoom", "MobiFlight.AS1000_PFD_RANGE_DEC"),
-            ShiftDial2 = Paired("MobiFlight.AS530_RNG_Zoom", "MobiFlight.AS1000_PFD_RANGE_INC",
-                                "MobiFlight.AS530_RNG_Dezoom", "MobiFlight.AS1000_PFD_RANGE_DEC"),
+            Dial1 = Paired("H:AS530_RightLargeKnob_Right", "H:AS1000_PFD_FMS_Lower_INC",
+                           "H:AS530_RightLargeKnob_Left", "H:AS1000_PFD_FMS_Lower_DEC"),
+            Dial2 = Paired("H:AS530_RightSmallKnob_Right", "H:AS1000_PFD_FMS_Upper_INC",
+                           "H:AS530_RightSmallKnob_Left", "H:AS1000_PFD_FMS_Upper_DEC"),
+            ShiftDial1 = Paired("H:AS530_RNG_Zoom", "H:AS1000_PFD_RANGE_INC",
+                                "H:AS530_RNG_Dezoom", "H:AS1000_PFD_RANGE_DEC"),
+            ShiftDial2 = Paired("H:AS530_RNG_Zoom", "H:AS1000_PFD_RANGE_INC",
+                                "H:AS530_RNG_Dezoom", "H:AS1000_PFD_RANGE_DEC"),
             Buttons =
             {
-                ["0x10"] = B("MobiFlight.AS530_DirectTo_Push", "MobiFlight.AS1000_PFD_DIRECTTO"),
-                ["0x20"] = B("MobiFlight.AS530_MENU_Push", "MobiFlight.AS1000_PFD_MENU_Push"),
-                ["0x40"] = B("MobiFlight.AS530_CLR_Push", "MobiFlight.AS1000_PFD_CLR"),
-                ["0x80"] = B("MobiFlight.AS530_ENT_Push", "MobiFlight.AS1000_PFD_ENT_Push"),  // was dead
-                ["0x200"] = B("MobiFlight.AS530_RightSmallKnob_Push", "MobiFlight.AS1000_PFD_FMS_Upper_PUSH"),
+                ["0x10"] = B("H:AS530_DirectTo_Push", "H:AS1000_PFD_DIRECTTO"),
+                ["0x20"] = B("H:AS530_MENU_Push", "H:AS1000_PFD_MENU_Push"),
+                ["0x40"] = B("H:AS530_CLR_Push", "H:AS1000_PFD_CLR"),
+                ["0x80"] = B("H:AS530_ENT_Push", "H:AS1000_PFD_ENT_Push"),  // was dead
+                ["0x200"] = B("H:AS530_RightSmallKnob_Push", "H:AS1000_PFD_FMS_Upper_PUSH"),
                 ["0x4000"] = B("TOGGLE_GPS_DRIVES_NAV1"),
-                ["0x8000"] = B("MobiFlight.AS530_OBS_Push"),
-                ["0x10000"] = B("MobiFlight.AS530_MSG_Push"),
-                ["0x20000"] = B("MobiFlight.AS530_FPL_Push", "MobiFlight.AS1000_PFD_FPL_Push"),
-                ["0x40000"] = B("MobiFlight.AS530_VNAV_Push"),
-                ["0x80000"] = B("MobiFlight.AS530_PROC_Push", "MobiFlight.AS1000_PFD_PROC_Push"),
+                ["0x8000"] = B("H:AS530_OBS_Push"),
+                ["0x10000"] = B("H:AS530_MSG_Push"),
+                ["0x20000"] = B("H:AS530_FPL_Push", "H:AS1000_PFD_FPL_Push"),
+                ["0x40000"] = B("H:AS530_VNAV_Push"),
+                ["0x80000"] = B("H:AS530_PROC_Push", "H:AS1000_PFD_PROC_Push"),
             },
         };
 
@@ -423,27 +452,27 @@ public sealed class AppConfig
         cfg.Modes["5"] = new ModeBinding
         {
             Label = "FMS2",
-            Dial1 = Paired("MobiFlight.AS430_RightLargeKnob_Right", "MobiFlight.AS1000_MFD_FMS_Lower_INC",
-                           "MobiFlight.AS430_RightLargeKnob_Left", "MobiFlight.AS1000_MFD_FMS_Lower_DEC"),
-            Dial2 = Paired("MobiFlight.AS430_RightSmallKnob_Right", "MobiFlight.AS1000_MFD_FMS_Upper_INC",
-                           "MobiFlight.AS430_RightSmallKnob_Left", "MobiFlight.AS1000_MFD_FMS_Upper_DEC"),
-            ShiftDial1 = Paired("MobiFlight.AS430_RNG_Zoom", "MobiFlight.AS1000_MFD_RANGE_INC",
-                                "MobiFlight.AS430_RNG_Dezoom", "MobiFlight.AS1000_MFD_RANGE_DEC"),
-            ShiftDial2 = Paired("MobiFlight.AS430_RNG_Zoom", "MobiFlight.AS1000_MFD_RANGE_INC",
-                                "MobiFlight.AS430_RNG_Dezoom", "MobiFlight.AS1000_MFD_RANGE_DEC"),
+            Dial1 = Paired("H:AS430_RightLargeKnob_Right", "H:AS1000_MFD_FMS_Lower_INC",
+                           "H:AS430_RightLargeKnob_Left", "H:AS1000_MFD_FMS_Lower_DEC"),
+            Dial2 = Paired("H:AS430_RightSmallKnob_Right", "H:AS1000_MFD_FMS_Upper_INC",
+                           "H:AS430_RightSmallKnob_Left", "H:AS1000_MFD_FMS_Upper_DEC"),
+            ShiftDial1 = Paired("H:AS430_RNG_Zoom", "H:AS1000_MFD_RANGE_INC",
+                                "H:AS430_RNG_Dezoom", "H:AS1000_MFD_RANGE_DEC"),
+            ShiftDial2 = Paired("H:AS430_RNG_Zoom", "H:AS1000_MFD_RANGE_INC",
+                                "H:AS430_RNG_Dezoom", "H:AS1000_MFD_RANGE_DEC"),
             Buttons =
             {
-                ["0x10"] = B("MobiFlight.AS430_DirectTo_Push", "MobiFlight.AS1000_MFD_DIRECTTO"),
-                ["0x20"] = B("MobiFlight.AS430_MENU_Push", "MobiFlight.AS1000_MFD_MENU_Push"),
-                ["0x40"] = B("MobiFlight.AS430_CLR_Push", "MobiFlight.AS1000_MFD_CLR"),
-                ["0x80"] = B("MobiFlight.AS430_ENT_Push", "MobiFlight.AS1000_MFD_ENT_Push"),  // was dead
-                ["0x200"] = B("MobiFlight.AS430_RightSmallKnob_Push", "MobiFlight.AS1000_MFD_FMS_Upper_PUSH"),
+                ["0x10"] = B("H:AS430_DirectTo_Push", "H:AS1000_MFD_DIRECTTO"),
+                ["0x20"] = B("H:AS430_MENU_Push", "H:AS1000_MFD_MENU_Push"),
+                ["0x40"] = B("H:AS430_CLR_Push", "H:AS1000_MFD_CLR"),
+                ["0x80"] = B("H:AS430_ENT_Push", "H:AS1000_MFD_ENT_Push"),  // was dead
+                ["0x200"] = B("H:AS430_RightSmallKnob_Push", "H:AS1000_MFD_FMS_Upper_PUSH"),
                 ["0x4000"] = B("TOGGLE_GPS_DRIVES_NAV1"),
-                ["0x8000"] = B("MobiFlight.AS430_OBS_Push"),
-                ["0x10000"] = B("MobiFlight.AS430_MSG_Push"),
-                ["0x20000"] = B("MobiFlight.AS430_FPL_Push", "MobiFlight.AS1000_MFD_FPL_Push"),
-                ["0x40000"] = B("MobiFlight.AS430_VNAV_Push"),
-                ["0x80000"] = B("MobiFlight.AS430_PROC_Push", "MobiFlight.AS1000_MFD_PROC_Push"),
+                ["0x8000"] = B("H:AS430_OBS_Push"),
+                ["0x10000"] = B("H:AS430_MSG_Push"),
+                ["0x20000"] = B("H:AS430_FPL_Push", "H:AS1000_MFD_FPL_Push"),
+                ["0x40000"] = B("H:AS430_VNAV_Push"),
+                ["0x80000"] = B("H:AS430_PROC_Push", "H:AS1000_MFD_PROC_Push"),
             },
         };
 

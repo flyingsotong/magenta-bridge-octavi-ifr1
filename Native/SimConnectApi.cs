@@ -25,6 +25,15 @@ public sealed class SimConnectApi : IDisposable
     public const uint DatatypeFloat64 = 4;
     public const uint DatatypeString256 = 9;
 
+    /// <summary>SIMCONNECT_COMM_BUS_BROADCAST_TO_WASM.</summary>
+    public const uint CommBusBroadcastToWasm = 1 << 1;
+
+    /// <summary>
+    /// True when the loaded client exports the CommBus call. Without it the app cannot reach
+    /// a WASM module, which is the only route to the GNS530's own buttons.
+    /// </summary>
+    public bool SupportsCommBus => _callCommBusEvent != null;
+
     private const int RecvIdSimObjectData = 8;
 
     private IntPtr _module;
@@ -43,6 +52,7 @@ public sealed class SimConnectApi : IDisposable
     private SetInputEventDoubleDelegate? _setInputEventDouble;
     private SubscribeInputEventDelegate? _subscribeInputEvent;
     private EnumerateInputEventParamsDelegate? _enumerateInputEventParams;
+    private CallCommBusEventDelegate? _callCommBusEvent;
     private SetDataOnSimObjectDelegate? _setDataOnSimObject;
 
     // Rooted so the GC never collects the thunk the sim calls back into.
@@ -199,6 +209,7 @@ public sealed class SimConnectApi : IDisposable
                 _subscribeInputEvent = TryBind<SubscribeInputEventDelegate>("SimConnect_SubscribeInputEvent");
                 _enumerateInputEventParams = TryBind<EnumerateInputEventParamsDelegate>("SimConnect_EnumerateInputEventParams");
                 _setDataOnSimObject = TryBind<SetDataOnSimObjectDelegate>("SimConnect_SetDataOnSimObject");
+                _callCommBusEvent = TryBind<CallCommBusEventDelegate>("SimConnect_CallCommBusEvent");
             }
             catch (Exception ex)
             {
@@ -267,6 +278,26 @@ public sealed class SimConnectApi : IDisposable
         if (_transmit == null || _handle == IntPtr.Zero) return;
         var hr = _transmit(_handle, ObjectIdUser, eventId, data, groupId, EventFlagGroupIdIsPriority);
         if (hr != 0) Log.Warn($"TransmitClientEvent(id={eventId}) failed hr=0x{hr:X8}");
+    }
+
+    /// <summary>
+    /// Sends a payload to a WASM module listening on the given CommBus channel. This is how
+    /// the panel reaches the GNS530's own buttons: they are not sim events, so the only way
+    /// to press them is code running inside the sim.
+    /// </summary>
+    public bool CallCommBusEvent(string channel, string payload)
+    {
+        if (_handle == IntPtr.Zero || _callCommBusEvent == null) return false;
+        if (string.IsNullOrEmpty(payload)) return false;
+
+        var bytes = Encoding.UTF8.GetBytes(payload);
+        var hr = _callCommBusEvent(_handle, channel, CommBusBroadcastToWasm, (uint)bytes.Length, bytes);
+        if (hr != 0)
+        {
+            // Logged once per distinct failure by the caller; a busy knob would flood the log.
+            return false;
+        }
+        return true;
     }
 
     public void AddToDataDefinition(uint defineId, string simVar, string units, uint datatype, float epsilon = 0f, uint datumId = Unused)
@@ -485,4 +516,7 @@ public sealed class SimConnectApi : IDisposable
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
     private delegate int SetDataOnSimObjectDelegate(
         IntPtr handle, uint defineId, uint objectId, uint flags, uint arrayCount, uint cbUnitSize, int[] data);
+
+    [UnmanagedFunctionPointer(CallingConvention.StdCall, CharSet = CharSet.Ansi, BestFitMapping = false)]
+    private delegate int CallCommBusEventDelegate(IntPtr handle, string eventName, uint broadcastTo, uint size, byte[] data);
 }

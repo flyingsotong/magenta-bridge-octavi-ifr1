@@ -104,6 +104,22 @@
           </StackPanel>
         </Border>
 
+        <!-- FMS1/FMS2 reach the GNS530 through a small module in Community; offer to install it -->
+        <Border x:Name="ModuleStrip" Style="{StaticResource Card}" Visibility="Collapsed"
+                BorderBrush="{DynamicResource Brush.Accent}">
+          <StackPanel>
+            <TextBlock Text="ONE SMALL MODULE FOR FMS MODE" FontSize="10"
+                       Foreground="{DynamicResource Brush.Accent}" />
+            <TextBlock x:Name="ModuleStripText"
+                       Text="FMS1 and FMS2 press the GNS530's own buttons, and only a small module inside the simulator can do that."
+                       FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0" />
+            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+              <Button Content="Install the module" Click="OnInstallModule" Margin="0,0,8,0" />
+              <Button Content="Check again" Click="OnRecheckModule" Margin="0" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
         <!-- the usual first-run trap: two programs cannot share the panel -->
         <Border x:Name="ConflictStrip" Style="{StaticResource Card}" Visibility="Collapsed"
                 BorderBrush="{DynamicResource Brush.Warn}">

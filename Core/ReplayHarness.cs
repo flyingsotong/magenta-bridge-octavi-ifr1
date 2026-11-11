@@ -56,7 +56,7 @@ public static class ReplayHarness
 
         Step("defect 5: fourth softkey is ENT (mode 4, bit 0x80)",
             Report(0x80, 0, 0, 4),
-            new[] { "MobiFlight.AS530_ENT_Push=0", "MobiFlight.AS1000_PFD_ENT_Push=0" });
+            new[] { "H:AS530_ENT_Push=0", "H:AS1000_PFD_ENT_Push=0" });
 
         Step("release (mode 4)",
             Report(0, 0, 0, 4),
@@ -120,9 +120,9 @@ public static class ReplayHarness
             Report(0, 1, 0, 1),
             new[] { "COM2_RADIO_WHOLE_INC=1" });
 
-        Step("GPS mode pairs GNS + G1000 knob events (mode 4, dial 1)",
+        Step("GPS mode sends both GNS and G1000 knob events through the module (mode 4, dial 1)",
             Report(0, 1, 0, 4),
-            new[] { "MobiFlight.AS530_RightLargeKnob_Right=1", "MobiFlight.AS1000_PFD_FMS_Lower_INC=1" });
+            new[] { "H:AS530_RightLargeKnob_Right=1", "H:AS1000_PFD_FMS_Lower_INC=1" });
 
         Step("altitude mode adds 100 ft per detent (mode 6)",
             Report(0, 1, 0, 6),
@@ -198,6 +198,79 @@ public static class ReplayHarness
         Step("NAV2 anticlockwise backs down a MHz",
             Report(0, -1, 0, 3),
             new[] { "NAV2_STBY_SET=67584" });
+
+        // Contract checks: no device, no sim and no Community folder needed. These are the
+        // things a packaging mistake would break silently.
+        void Check(string label, bool ok, string detail)
+        {
+            if (!ok) failures++;
+            lines.Add($"{(ok ? "PASS" : "FAIL")} — {label}");
+            if (!ok) lines.Add($"       {detail}");
+        }
+
+        static IEnumerable<string> Names(ModeBinding mode)
+        {
+            foreach (var dial in new[] { mode.Dial1, mode.Dial2, mode.ShiftDial1, mode.ShiftDial2 })
+            {
+                if (dial == null) continue;
+                foreach (var n in dial.Inc ?? Array.Empty<string>()) yield return n;
+                foreach (var n in dial.Dec ?? Array.Empty<string>()) yield return n;
+            }
+
+            foreach (var button in mode.Buttons.Values)
+                foreach (var n in button.Events ?? Array.Empty<string>()) yield return n;
+        }
+
+        var fmsNames = new[] { "4", "5" }
+            .Where(config.Modes.ContainsKey)
+            .SelectMany(k => Names(config.Modes[k]))
+            .ToArray();
+
+        Check($"every FMS binding goes through the module ({fmsNames.Length} of them)",
+            fmsNames.All(n => ModuleLink.IsModuleEvent(n) || n == "TOGGLE_GPS_DRIVES_NAV1"),
+            "one still names a plain sim event, so it would never reach the GNS: " +
+            string.Join(", ", fmsNames.Where(n => !ModuleLink.IsModuleEvent(n) && n != "TOGGLE_GPS_DRIVES_NAV1")));
+
+        var everyName = config.Modes.SelectMany(m => Names(m.Value))
+            .Concat(config.Buttons.Values.SelectMany(b => b.Events ?? Array.Empty<string>()))
+            .ToArray();
+
+        Check("no binding still refers to MobiFlight",
+            !everyName.Any(n => n.Contains("MobiFlight", StringComparison.OrdinalIgnoreCase)),
+            "a binding still carries a MobiFlight name, which needs their module installed");
+
+        Check("the FMS module ships inside the exe",
+            ModuleInstaller.HasEmbeddedModule,
+            "the embedded module resource is missing - this build would install nothing");
+
+        Check($"config version {AppConfig.CurrentVersion} carries the new bindings",
+            AppConfig.CurrentVersion >= 7,
+            "a stale config would keep the old MobiFlight names and FMS mode would stay dead");
+
+        // Regenerating across a version bump must not cost the user their preferences. This is
+        // written as a file test because that is the only way to exercise the load path.
+        var scratch = Path.Combine(Path.GetTempPath(), $"mb-config-{Guid.NewGuid():N}.json");
+        try
+        {
+            File.WriteAllText(scratch,
+                "{ \"version\": 6, \"theme\": \"dark\", \"alwaysOnTop\": true, " +
+                "\"startWithWindows\": true, \"welcomeDismissed\": true }");
+
+            var reloaded = AppConfig.LoadOrCreate(scratch);
+
+            Check("a version bump keeps theme, topmost, startup and the welcome state",
+                reloaded.Theme == "dark" && reloaded.AlwaysOnTop &&
+                reloaded.StartWithWindows && reloaded.WelcomeDismissed &&
+                reloaded.Version == AppConfig.CurrentVersion,
+                $"theme={reloaded.Theme} topmost={reloaded.AlwaysOnTop} " +
+                $"startWithWindows={reloaded.StartWithWindows} welcome={reloaded.WelcomeDismissed} " +
+                $"version={reloaded.Version}");
+        }
+        finally
+        {
+            try { File.Delete(scratch); } catch { }
+            try { File.Delete(scratch + ".v6.bak"); } catch { }
+        }
 
         var summary = failures == 0
             ? $"ALL {lines.Count(l => l.StartsWith("PASS"))} CHECKS PASSED"

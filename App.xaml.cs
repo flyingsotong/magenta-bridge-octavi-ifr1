@@ -94,6 +94,15 @@ public partial class App : Application
             return;
         }
 
+        if (e.Args.Any(a => a.Equals("--module", StringComparison.OrdinalIgnoreCase)))
+        {
+            var index = Array.FindIndex(e.Args, a => a.Equals("--module", StringComparison.OrdinalIgnoreCase));
+            var action = index + 1 < e.Args.Length ? e.Args[index + 1] : "status";
+            var output = index + 2 < e.Args.Length ? e.Args[index + 2] : "magenta-module.txt";
+            Shutdown(ModuleHarness.Run(action, output));
+            return;
+        }
+
         if (e.Args.Any(a => a.Equals("--replay", StringComparison.OrdinalIgnoreCase)))
         {
             var index = Array.FindIndex(e.Args, a => a.Equals("--replay", StringComparison.OrdinalIgnoreCase));

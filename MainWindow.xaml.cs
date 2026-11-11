@@ -38,6 +38,7 @@ public partial class MainWindow : Window
         // Sized from the measured content (621 at 144 DPI) plus chrome and slack.
         if (WelcomeStrip.Visibility == Visibility.Visible) Height = 860;
         DetectVendorPlugin();
+        RefreshModuleStrip();
 
         // The window keeps its real icon for the taskbar and Alt-Tab; the custom caption draws
         // no icon or title, so nothing is duplicated on screen.
@@ -645,6 +646,53 @@ public partial class MainWindow : Window
     }
 
     private void OnRecheckPlugin(object sender, RoutedEventArgs e) => DetectVendorPlugin();
+
+    /// <summary>
+    /// FMS1 and FMS2 press the GNS530's own buttons, which only a small module running inside
+    /// the simulator can do. Say so when it is missing, and offer to install it, instead of
+    /// letting those two modes look broken.
+    /// </summary>
+    private void RefreshModuleStrip()
+    {
+        try
+        {
+            var presence = ModuleInstaller.Check();
+            if (presence.Installed)
+            {
+                ModuleStrip.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            ModuleStripText.Text = presence.Path == null
+                ? "FMS1 and FMS2 are not reachable yet: the simulator's Community folder was not found. " +
+                  "Start MSFS once, then press Check again."
+                : "FMS1 and FMS2 press the GNS530's own buttons, and only a small module inside the " +
+                  $"simulator can do that. Status: {presence.Status}. Installed, both modes work; " +
+                  "no MobiFlight, nothing else to install.";
+
+            ModuleStrip.Visibility = Visibility.Visible;
+        }
+        catch (Exception ex)
+        {
+            Log.Warn($"could not check for the FMS module: {ex.Message}");
+        }
+    }
+
+    private void OnInstallModule(object sender, RoutedEventArgs e)
+    {
+        var error = ModuleInstaller.Install();
+        if (error != null)
+        {
+            ModuleStripText.Text = error;
+            ModuleStrip.Visibility = Visibility.Visible;
+            Log.Warn($"FMS module install failed: {error}");
+            return;
+        }
+
+        RefreshModuleStrip();
+    }
+
+    private void OnRecheckModule(object sender, RoutedEventArgs e) => RefreshModuleStrip();
 
     /// <summary>
     /// Closes the vendor plug-in on the user's behalf. It has no documented exit API, so this

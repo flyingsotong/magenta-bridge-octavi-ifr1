@@ -44,6 +44,12 @@ public sealed class PanelState
 
     public long Reports;
     public long EventsSent;
+
+    /// <summary>True once a module call has been delivered without error this session.</summary>
+    public bool ModuleReachable;
+
+    /// <summary>Set when module calls cannot be delivered, so the UI can explain why.</summary>
+    public string ModuleError = "";
 }
 
 /// <summary>
@@ -64,6 +70,7 @@ public sealed class PanelEngine : IDisposable
 
     private HidConnection? _hid;
     private Thread? _simThread;
+    private bool _moduleFaultLogged;
     private Thread? _hidThread;
     private volatile bool _stopping;
 
@@ -891,6 +898,23 @@ public sealed class PanelEngine : IDisposable
             return;
         }
 
+        // "H:" names are the gauge's own events, not sim events. They belong to the GNS screen
+        // and only code running inside the sim can call them, so they go out over the CommBus
+        // to our module. With the module absent nothing happens - the status line says so.
+        if (ModuleLink.IsModuleEvent(eventName))
+        {
+            var name = ModuleLink.Strip(eventName);
+            if (_sim.Connected)
+            {
+                if (_sim.CallCommBusEvent(ModuleLink.Channel, name)) NoteModuleSuccess();
+                else NoteModuleFailure(name);
+            }
+
+            State.EventsSent++;
+            Log.Debug($"tx module {name}");
+            return;
+        }
+
         var id = IdFor(eventName);
 
         lock (_gate)
@@ -905,6 +929,37 @@ public sealed class PanelEngine : IDisposable
         _sim.Transmit(id, data);
         Log.Debug($"tx {eventName} id={id} data={data}");
         State.EventsSent++;
+    }
+
+    /// <summary>
+    /// A module call did not go out. Report once per failure, not once per detent, and name
+    /// the likely cause rather than repeating the symptom.
+    /// </summary>
+    private void NoteModuleFailure(string name)
+    {
+        State.ModuleReachable = false;
+        State.ModuleError = _sim.SupportsCommBus
+            ? "the FMS module is not answering"
+            : "this SimConnect client cannot reach a module";
+
+        if (_moduleFaultLogged) return;
+        _moduleFaultLogged = true;
+
+        Log.Warn(ModuleInstaller.IsInstalled()
+            ? $"module call \"{name}\" was not delivered - the module is installed, so the sim " +
+              $"is not answering on \"{ModuleLink.Channel}\""
+            : $"module call \"{name}\" was not delivered - the FMS module is not installed");
+        Raise();
+    }
+
+    private void NoteModuleSuccess()
+    {
+        State.ModuleReachable = true;
+        State.ModuleError = "";
+
+        if (!_moduleFaultLogged) return;
+        _moduleFaultLogged = false;
+        Log.Info("module calls are being delivered");
     }
 
     private void Raise()

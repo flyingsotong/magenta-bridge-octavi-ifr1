@@ -37,4 +37,10 @@
     <Resource Include="Assets\magenta-lockup-dark.png" />
     <Resource Include="Assets\magenta-lockup-light.png" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- The FMS module ships inside the exe so installing it is a button, not a download.
+         Rebuilt from ..\magenta-wasm\build.ps1; the LogicalName is what ModuleInstaller reads. -->
+    <EmbeddedResource Include="Modules\MagentaBridgeModule.wasm"
+                      LogicalName="MagentaBridge.Modules.MagentaBridgeModule.wasm" />
+  </ItemGroup>
 </Project>
