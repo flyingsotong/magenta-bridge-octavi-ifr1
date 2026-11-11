@@ -22,11 +22,11 @@ taskbar, so they never collide.
 
 I bought the panel, liked the hardware, and wanted to build on it. This is that.
 
-## Status: v0.1.0
+## Status: v0.2.0
 
-Working and verified against live MSFS 2024 and a physical IFR-1. Everything the simulator
-exposes to a SimConnect client is implemented. The few controls that need more than that are
-documented below, with the reason, so nobody has to discover them the hard way.
+Working and verified against live MSFS 2024 and a physical IFR-1, including **FMS1 and FMS2** —
+the GNS530/430 knobs and bezel buttons, with no MobiFlight. Those need a small module that the
+app installs for you; see *The FMS module* below. Everything else works without it.
 
 ## Requirements
 
@@ -61,13 +61,13 @@ Being a replacement isn't a feature, so here is what is actually different.
 | **Windows 11** | Fixed-size bitmap UI | Per-monitor DPI, dark and light palettes, custom chrome |
 | **Remapping** | Fixed | JSON config: per-mode bindings, device selected by serial |
 | **Long knob turns** | One click, one step | Accelerates with turn speed |
-| **MobiFlight** | Required for FMS | Not required at all |
+| **FMS (GNS530/430 buttons and knobs)** | Needs MobiFlight installed | Works — the app installs one 15 KB module, nothing else |
 | **Licence / telemetry** | Closed, unknown | MIT, no telemetry |
 
-**What the official plug-in still does better:** if you already run MobiFlight, its FMS support
-reaches the GNS530/430 knobs and the OBS/MSG/FPL/VNAV/PROC softkeys. This bridge cannot, for
-the reason below. That is a real advantage of their design, and worth knowing before you
-switch.
+**What the official plug-in still does better:** nothing that needs MobiFlight. Its FMS support
+reaches the GNS knobs and softkeys only by talking to MobiFlight's module; this bridge now does
+the same job through its own, which the app installs for you. If you already run MobiFlight for
+other hardware, its route still works — you just don't need it here.
 
 ## What works
 
@@ -77,8 +77,13 @@ switch.
 |---|---|---|
 | COM1 / COM2 | standby frequency, swap | **HDG** (10° / 1°), **BARO** |
 | NAV1 / NAV2 | standby frequency | **CRS1 / CRS2** |
+| FMS1 (GNS530) / FMS2 (GNS430) | the gauge's large and small knobs, plus the knob presses | **range zoom**: hold the toggle button and turn |
 | AP | target altitude (100 ft) | — |
 | XPDR | squawk (2 digits per knob), IDENT | **mode** OFF / SBY / TST / ON / ALT |
+
+FMS modes also carry the six-button row: Direct To, MENU, CLR, ENT, and CDI / OBS / MSG / FPL /
+VNAV / PROC. Both the GNS and the G1000 event names are sent for each action, so the same panel
+works in an aircraft with either avionics suite; the one that is not fitted ignores the event.
 
 Also: all six AP buttons, AP master, encoder acceleration, a guided **Test your panel** check,
 dark and light themes, always-on-top, start with Windows, a live radio-stack readout, and the name of the aircraft you are actually flying.
@@ -102,12 +107,27 @@ buttons. The app detects this and says so.
 the panel in FMS1). Until you touch the panel the window shows `press any button`, then
 tracks it accurately.
 
-**GNS530/430 rotary knobs and five softkeys** (OBS, MSG, FPL, VNAV, PROC). These are exposed
-only as MSFS *input events*, and `SimConnect_SetInputEvent` does not drive them — which is
-why the IFR-1 manual points to MobiFlight's WASM module for FMS support. Reaching them needs
-code running inside the simulator that executes the gauge's `>H:` calculator events, i.e. a
-WASM module. That is a scope boundary we chose, not an oversight. The FMS **CDI** button
-does work, via `TOGGLE_GPS_DRIVES_NAV1`.
+**GNS530/430 buttons need the module.** They are not sim events, so a SimConnect client cannot
+press them on its own; the module below does it from inside the simulator. With the module
+absent, the FMS modes' knobs and buttons do nothing — deliberately, and the window says so
+rather than pretending. The FMS **CDI** button works either way, via `TOGGLE_GPS_DRIVES_NAV1`.
+
+## The FMS module
+
+The GNS530/430 bezel controls are the gauge's own events. Only code running inside MSFS can fire
+them, so this bridge ships a 15 KB WASM module that does exactly that and nothing else.
+
+- You never download it separately. It is embedded in the executable.
+- If it is missing, a card in the window offers **Install the module**. One click writes three
+  files into your simulator's Community folder, found by reading the sim's own `UserCfg.opt`.
+- From a console: `MagentaBridge-OctaviIFR1.exe --module status`, `--module install`,
+  `--module remove`.
+- To uninstall, delete `Community\magenta-bridge-module`. Nothing runs in the background, there
+  is no service, no settings file and no updater.
+- It is one module for the whole Magenta Bridge family, not one per product.
+
+Without it the bridge is exactly what v0.1.0 was: every radio, autopilot, transponder and CDI
+control, no GNS bezel buttons.
 
 ## Settings
 
@@ -143,9 +163,16 @@ dotnet publish -c Release -r win-x64 --self-contained true -o dist
 Requires the .NET 8 SDK. There are no third-party package references: the whole app is the
 base class library plus Win32/SimConnect interop.
 
-`--replay <path>` runs the 36 self-checking decode assertions and writes the results; they
-cover every mapping, the shift latch, NAV accumulation, transponder clamping and the
-AP altitude/VS split.
+The FMS module is built separately, with the MSFS SDK's own clang toolchain, and then embedded
+into the app at compile time:
+
+```
+.\Modules\build-module.ps1      # needs C:\MSFS 2024 SDK
+```
+
+`--replay <path>` runs the 47 self-checking assertions and writes the results; they cover every
+mapping, the shift latch and the held-shift range gesture, NAV accumulation, transponder
+clamping, the AP altitude/VS split, and the module's embed and routing contracts.
 
 ## License
 
