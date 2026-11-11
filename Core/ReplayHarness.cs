@@ -199,6 +199,33 @@ public static class ReplayHarness
             Report(0, -1, 0, 3),
             new[] { "NAV2_STBY_SET=67584" });
 
+        // Manual 5.3.4: "press and hold the toggle button (<->) while turning the rotary knob
+        // to zoom in/out". The knob press is the GNS knob push in FMS modes, so the swap key
+        // is what arms the range.
+        Step("enter FMS2 for the range test",
+            Report(0, 0, 0, 5),
+            Array.Empty<string>());
+
+        Step("holding the toggle button arms range and sends nothing itself",
+            Report(0x100, 0, 0, 5),
+            Array.Empty<string>());
+
+        Step("held shift, lower knob zooms the map in",
+            Report(0x100, 1, 0, 5),
+            new[] { "H:AS430_RNG_Zoom=1", "H:AS1000_MFD_RANGE_INC=1" });
+
+        Step("held shift, upper knob zooms the map out",
+            Report(0x100, 0, -1, 5),
+            new[] { "H:AS430_RNG_Dezoom=1", "H:AS1000_MFD_RANGE_DEC=1" });
+
+        Step("releasing the toggle button drops the shift",
+            Report(0, 0, 0, 5),
+            Array.Empty<string>());
+
+        Step("released, the lower knob is the GNS large knob again",
+            Report(0, 1, 0, 5),
+            new[] { "H:AS430_RightLargeKnob_Right=1", "H:AS1000_MFD_FMS_Lower_INC=1" });
+
         // Contract checks: no device, no sim and no Community folder needed. These are the
         // things a packaging mistake would break silently.
         void Check(string label, bool ok, string detail)

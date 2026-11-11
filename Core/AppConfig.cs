@@ -14,6 +14,13 @@ public sealed class ButtonBinding
 {
     public string[]? Events { get; set; }
     public bool TogglesShift { get; set; }
+
+    /// <summary>
+    /// True while the button is held: arms shift only for as long as it is down. The manual's
+    /// range-zoom gesture is "press and hold the toggle button while turning the knob", which
+    /// a latch cannot express (manual 5.3.4).
+    /// </summary>
+    public bool HoldShift { get; set; }
 }
 
 /// <summary>
@@ -90,7 +97,7 @@ public sealed class AppConfig
     /// A config written by an older build is archived and regenerated rather than half-merged,
     /// which is what previously left mode 7 without its transponder-mode shift binding.
     /// </summary>
-    public const int CurrentVersion = 7;
+    public const int CurrentVersion = 8;
 
     public int Version { get; set; } = CurrentVersion;
 
@@ -435,6 +442,10 @@ public sealed class AppConfig
             Buttons =
             {
                 ["0x10"] = B("H:AS530_DirectTo_Push", "H:AS1000_PFD_DIRECTTO"),
+                // Manual 5.3.4: hold the toggle button (the <-> swap key) and turn a knob to
+                // zoom the map. The knob press is already the GNS knob push below, so the
+                // swap key is the only free control for the range modifier.
+                ["0x100"] = new ButtonBinding { HoldShift = true },
                 ["0x20"] = B("H:AS530_MENU_Push", "H:AS1000_PFD_MENU_Push"),
                 ["0x40"] = B("H:AS530_CLR_Push", "H:AS1000_PFD_CLR"),
                 ["0x80"] = B("H:AS530_ENT_Push", "H:AS1000_PFD_ENT_Push"),  // was dead
@@ -463,6 +474,8 @@ public sealed class AppConfig
             Buttons =
             {
                 ["0x10"] = B("H:AS430_DirectTo_Push", "H:AS1000_MFD_DIRECTTO"),
+                // Manual 5.3.4: hold the toggle button and turn a knob to zoom the map.
+                ["0x100"] = new ButtonBinding { HoldShift = true },
                 ["0x20"] = B("H:AS430_MENU_Push", "H:AS1000_MFD_MENU_Push"),
                 ["0x40"] = B("H:AS430_CLR_Push", "H:AS1000_MFD_CLR"),
                 ["0x80"] = B("H:AS430_ENT_Push", "H:AS1000_MFD_ENT_Push"),  // was dead

@@ -353,9 +353,11 @@ public sealed class PanelEngine : IDisposable
         var mode = report[7] & 0x07;
 
         uint pressed;
+        uint released;
         lock (_gate)
         {
             pressed = ~_lastField & field;
+            released = _lastField & ~field;
             _lastField = field;
         }
 
@@ -389,6 +391,19 @@ public sealed class PanelEngine : IDisposable
             var binding = _config.FindButton(mode, mask);
             if (binding == null) continue;
 
+            if (binding.HoldShift)
+            {
+                // Manual 5.3.4: range zoom is "press and hold the toggle button while turning
+                // the knob", so this arms shift for exactly as long as the button is down.
+                if (!_shift)
+                {
+                    _shift = true;
+                    State.Shift = true;
+                    Log.Info($"shift held -> range (mode {mode})");
+                }
+                continue;
+            }
+
             if (binding.TogglesShift)
             {
                 // The knob switch bounces: a single press can arrive as press-release-press,
@@ -412,6 +427,24 @@ public sealed class PanelEngine : IDisposable
         }
 
         if (dial1 != 0 || dial2 != 0) HandleDials(mode, dial1, dial2);
+
+        // Releasing a held button drops the shift it armed.
+        if (released != 0 && _shift)
+        {
+            for (var bit = 0; bit < 32; bit++)
+            {
+                var mask = 1u << bit;
+                if ((released & mask) == 0) continue;
+
+                if (_config.FindButton(mode, mask) is { HoldShift: true })
+                {
+                    _shift = false;
+                    State.Shift = false;
+                    Log.Info($"shift released (mode {mode})");
+                    break;
+                }
+            }
+        }
 
         Raise();
     }
