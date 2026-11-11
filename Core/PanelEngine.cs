@@ -71,6 +71,7 @@ public sealed class PanelEngine : IDisposable
     private HidConnection? _hid;
     private Thread? _simThread;
     private bool _moduleFaultLogged;
+    private bool _moduleConfirmed;
     private Thread? _hidThread;
     private volatile bool _stopping;
 
@@ -957,9 +958,18 @@ public sealed class PanelEngine : IDisposable
         State.ModuleReachable = true;
         State.ModuleError = "";
 
-        if (!_moduleFaultLogged) return;
-        _moduleFaultLogged = false;
-        Log.Info("module calls are being delivered");
+        if (_moduleFaultLogged)
+        {
+            _moduleFaultLogged = false;
+            Log.Info("module calls are being delivered again");
+            return;
+        }
+
+        // Say it once, at a level that lands in the log by default: the first module call is
+        // the line that tells a support session whether the app ever reached the module.
+        if (_moduleConfirmed) return;
+        _moduleConfirmed = true;
+        Log.Info($"module calls are being delivered on \"{ModuleLink.Channel}\"");
     }
 
     private void Raise()
