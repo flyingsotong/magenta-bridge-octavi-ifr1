@@ -90,6 +90,15 @@ public sealed class SimConnectOptions
     public string ClientName { get; set; } = ProductInfo.SimClientName;
 }
 
+public sealed class ModuleOptions
+{
+    /// <summary>
+    /// The Community folder the user picked by hand. Null means "find it", which covers a
+    /// Store or Steam install; this is the way out when the sim sits somewhere else.
+    /// </summary>
+    public string? CommunityPath { get; set; }
+}
+
 public sealed class AppConfig
 {
     /// <summary>
@@ -115,6 +124,7 @@ public sealed class AppConfig
     public DeviceOptions Device { get; set; } = new();
     public LogOptions Logging { get; set; } = new();
     public SimConnectOptions SimConnect { get; set; } = new();
+    public ModuleOptions Module { get; set; } = new();
 
     /// <summary>Global button bindings, keyed by hex bit such as "0x4000".</summary>
     public Dictionary<string, ButtonBinding> Buttons { get; set; } = new(StringComparer.OrdinalIgnoreCase);
@@ -276,6 +286,7 @@ public sealed class AppConfig
         if (from.Device != null) to.Device = from.Device;
         if (from.Logging != null) to.Logging = from.Logging;
         if (from.SimConnect != null) to.SimConnect = from.SimConnect;
+        if (from.Module != null) to.Module = from.Module;
     }
 
     public void Save(string? path = null)
@@ -317,6 +328,7 @@ public sealed class AppConfig
         Device ??= new DeviceOptions();
         Logging ??= new LogOptions();
         SimConnect ??= new SimConnectOptions();
+        Module ??= new ModuleOptions();
     }
 
     private static ButtonBinding B(params string[] events) => new() { Events = events };

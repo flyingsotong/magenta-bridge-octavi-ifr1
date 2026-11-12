@@ -38,6 +38,9 @@ public partial class MainWindow : Window
         // Sized from the measured content (621 at 144 DPI) plus chrome and slack.
         if (WelcomeStrip.Visibility == Visibility.Visible) Height = 860;
         DetectVendorPlugin();
+        // A Community folder picked by hand wins over discovery, so it has to be in place
+        // before the module strip asks where Community is.
+        ModuleInstaller.SetCommunityOverride(_engine.Config.Module.CommunityPath);
         RefreshModuleStrip();
 
         // The window keeps its real icon for the taskbar and Alt-Tab; the custom caption draws
@@ -312,6 +315,7 @@ public partial class MainWindow : Window
         SyncStartupButton();
         SyncThemeButton();
         SyncTopmostButton();
+        SettingsClientHint.Text = "";
         RefreshSettingsPanel();
         SettingsOverlay.Visibility = Visibility.Visible;
         SettingsOverlay.Focus();
@@ -667,7 +671,7 @@ public partial class MainWindow : Window
 
             ModuleStripText.Text = presence.Path == null
                 ? "FMS1 and FMS2 are not reachable yet: the simulator's Community folder was not found. " +
-                  "Start MSFS once, then press Check again."
+                  "Start MSFS once and press Check, or open Diagnostics and choose the folder yourself."
                 : "FMS1 and FMS2 press the GNS530's own buttons, and only a small module inside the " +
                   $"simulator can do that. Status: {presence.Status}. Installed, both modes work; " +
                   "no MobiFlight, nothing else to install.";
@@ -707,6 +711,82 @@ public partial class MainWindow : Window
     private void OnRecheckModule(object sender, RoutedEventArgs e) => RefreshModuleStrip();
 
     /// <summary>
+    /// Lets the user point at the client by hand. The search covers the Store and Steam
+    /// defaults, so this is the way out when the sim sits somewhere unusual.
+    /// </summary>
+    private void OnLocateClient(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Pick the SimConnect client from your MSFS folder",
+            Filter = "SimConnect client (SimConnect*.dll)|SimConnect*.dll|DLL files (*.dll)|*.dll",
+            CheckFileExists = true,
+        };
+
+        if (dialog.ShowDialog(this) != true) return;
+
+        var pick = dialog.FileName;
+        if (!System.IO.Path.GetFileName(pick).StartsWith("SimConnect", StringComparison.OrdinalIgnoreCase))
+        {
+            SettingsClientHint.Text = "That is not a SimConnect client. Its file name starts with SimConnect.";
+            return;
+        }
+
+        _engine.Config.SimConnect.ClientDllPath = pick;
+        try
+        {
+            _engine.Config.Save();
+            SettingsClientHint.Text = "Saved. Restart Magenta Bridge and it will use this file.";
+            Log.Info($"SimConnect client chosen by hand: {pick}");
+        }
+        catch (Exception ex)
+        {
+            SettingsClientHint.Text = "Could not save the config: " + ex.Message;
+            Log.Error("could not save the SimConnect client path", ex);
+        }
+    }
+
+    /// <summary>
+    /// Lets the user point at the Community folder. The GPS add-on cannot install anywhere
+    /// until the app knows which folder the sim reads, and a Steam install is the case the
+    /// discovery cannot always answer.
+    /// </summary>
+    private void OnChooseCommunityClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFolderDialog
+        {
+            Title = "Pick the simulator's Community folder",
+            Multiselect = false,
+        };
+
+        if (dialog.ShowDialog(this) != true) return;
+
+        var folder = dialog.FolderName;
+        if (!folder.TrimEnd('\\').EndsWith("Community", StringComparison.OrdinalIgnoreCase))
+        {
+            // They may have picked the content folder that holds Community.
+            var child = System.IO.Path.Combine(folder, "Community");
+            if (System.IO.Directory.Exists(child)) folder = child;
+        }
+
+        _engine.Config.Module.CommunityPath = folder;
+        ModuleInstaller.SetCommunityOverride(folder);
+
+        try
+        {
+            _engine.Config.Save();
+            Log.Info($"Community folder chosen by hand: {folder}");
+        }
+        catch (Exception ex)
+        {
+            Log.Warn($"could not save the Community folder: {ex.Message}");
+        }
+
+        SyncModuleStatus();
+        RefreshModuleStrip();
+    }
+
+    /// <summary>
     /// The persistent answer to "is the module installed?", in Diagnostics beside the resolved
     /// SimConnect client. The strip above is a first-run prompt and disappears once installed;
     /// this line always says where things stand, and offers the install when it is missing.
@@ -724,6 +804,9 @@ public partial class MainWindow : Window
             ModuleInstallLink.Visibility = presence is { Installed: false, Path: not null }
                 ? Visibility.Visible
                 : Visibility.Collapsed;
+
+            // The folder can be wrong as well as unknown, so the link stays until it is installed.
+            ModuleFolderLink.Visibility = presence.Installed ? Visibility.Collapsed : Visibility.Visible;
         }
         catch (Exception ex)
         {

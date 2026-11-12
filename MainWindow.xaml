@@ -367,6 +367,11 @@
                          Foreground="{DynamicResource Brush.Link}" TextDecorations="Underline"
                          MouseLeftButtonUp="OnInstallModuleClick"
                          ToolTip="Writes the module into the simulator's Community folder" />
+              <TextBlock x:Name="ModuleFolderLink" Text="Choose the Community folder" FontSize="9"
+                         Margin="0,4,0,0" Cursor="Hand" Visibility="Collapsed"
+                         Foreground="{DynamicResource Brush.Link}" TextDecorations="Underline"
+                         MouseLeftButtonUp="OnChooseCommunityClick"
+                         ToolTip="Point the app at the simulator's Community folder when it cannot find it" />
               <TextBlock x:Name="ErrorText" Text="" FontSize="11" Margin="0,6,0,0"
                          Foreground="{DynamicResource Brush.Warn}" TextWrapping="Wrap" />
               <TextBlock x:Name="SelfTestText" Text="" FontSize="11" Margin="0,8,0,0"
@@ -481,6 +486,10 @@
             <TextBlock Text="SIMULATOR" FontSize="9" Foreground="{DynamicResource Brush.Dim}" Margin="0,16,0,6" />
             <TextBlock x:Name="SettingsClientText" Text="-" FontSize="10"
                        Foreground="{DynamicResource Brush.Muted}" TextWrapping="Wrap" />
+            <Button Content="Locate the SimConnect file…" Click="OnLocateClient" HorizontalAlignment="Left"
+                    Margin="0,8,0,0" FontSize="10" Padding="12,5" />
+            <TextBlock x:Name="SettingsClientHint" Text="" FontSize="9" Margin="0,6,0,0"
+                       Foreground="{DynamicResource Brush.Dim}" TextWrapping="Wrap" />
             <TextBlock x:Name="SettingsConfigText" Text="-" FontSize="10" Margin="0,6,0,0"
                        Foreground="{DynamicResource Brush.Muted}" TextWrapping="Wrap" />
 

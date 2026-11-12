@@ -52,11 +52,33 @@ public static class ModuleInstaller
         "Microsoft.FlightSimulator_8wekyb3d8bbwe",   // MSFS 2020, Store
     };
 
+    /// <summary>Steam keeps its per-sim folders in Roaming, and UserCfg.opt sits there.</summary>
+    private static readonly string[] SimRoamingFolders =
+    {
+        "Microsoft Flight Simulator 2024",
+        "Microsoft Flight Simulator",
+    };
+
     private static string? _cachedCommunity;
+    private static string? _communityOverride;
+
+    /// <summary>
+    /// A Community folder the user picked by hand, from config. It wins over discovery: a
+    /// guess that keeps failing is worse than the user's own answer.
+    /// </summary>
+    public static void SetCommunityOverride(string? path)
+    {
+        _communityOverride = string.IsNullOrWhiteSpace(path) ? null : path;
+        _cachedCommunity = null;
+        Invalidate();
+    }
 
     /// <summary>The Community folder the sim actually reads, or null when none was found.</summary>
     public static string? CommunityFolder()
     {
+        if (_communityOverride is not null && Directory.Exists(_communityOverride))
+            return _communityOverride;
+
         if (_cachedCommunity != null) return _cachedCommunity;
 
         foreach (var root in RootsFromSimConfig().Concat(FallbackRoots))
@@ -81,11 +103,18 @@ public static class ModuleInstaller
     private static IEnumerable<string> RootsFromSimConfig()
     {
         var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        var roaming = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
 
-        foreach (var family in PackageFamilies)
+        // Store first, then Steam. The sim writes UserCfg.opt in both places and it names
+        // wherever the content actually went, including another drive.
+        var optFolders = PackageFamilies
+            .Select(family => Path.Combine(local, "Packages", family, "LocalCache"))
+            .Concat(SimRoamingFolders.Select(name => Path.Combine(roaming, name)));
+
+        foreach (var folder in optFolders)
         {
             string? root = null;
-            var opt = Path.Combine(local, "Packages", family, "LocalCache", "UserCfg.opt");
+            var opt = Path.Combine(folder, "UserCfg.opt");
 
             try
             {
@@ -152,7 +181,7 @@ public static class ModuleInstaller
         if (presence.Installed) return $"GPS add-on: installed and ready, at {presence.Path}";
 
         return presence.Path == null
-            ? "GPS add-on: not installed, and the simulator's folder was not found - start MSFS once, then press Check"
+            ? "GPS add-on: not installed, and the simulator's folder was not found - start MSFS once and press Check, or choose the folder in Diagnostics"
             : "GPS add-on: not installed - the GNS530/430 buttons (FMS1/FMS2) will do nothing until it is";
     }
 

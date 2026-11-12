@@ -22,7 +22,7 @@ taskbar, so they never collide.
 
 I bought the panel, liked the hardware, and wanted to build on it. This is that.
 
-## Status: v0.2.0
+## Status: v0.2.4
 
 Working and verified against live MSFS 2024 and a physical IFR-1, including **FMS1 and FMS2** —
 the GNS530/430 knobs and bezel buttons, with no MobiFlight. Those need a small module that the
@@ -159,6 +159,8 @@ Light theme is a full second palette, not an inverted filter:
 | `press any button` at launch | Expected; the device does not answer a state query. Touch any control. |
 | "Waiting for the panel. Check the USB cable." | The device is not enumerated. Reconnect it. |
 | Simulator not detected | Start MSFS; the app reconnects on its own. |
+| "SimConnect client: not found" in Diagnostics | The app could not find the sim's SimConnect library, which happens when the sim is installed somewhere unusual. Press **Locate the SimConnect file** in Settings, pick `SimConnect_internal.dll` from your MSFS folder, and restart. |
+| The GPS add-on will not install, or Community is not found | Press **Choose the Community folder** in Diagnostics and pick it. A Steam install is the case the automatic search cannot always answer. |
 
 Logs live in `%LOCALAPPDATA%\MagentaBridge\OctaviIFR1\logs\`. Diagnostics in the app shows the tail;
 the file holds the full rotating history.
