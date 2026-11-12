@@ -3,6 +3,16 @@
 All notable changes to Magenta Bridge for Octavi IFR-1. This project has no vendor code and no
 MobiFlight dependency; the entries below are about what the panel can actually do.
 
+## 0.2.2 - 2026-11-12
+
+- The FMS module's status is now **always visible**, in Diagnostics next to the resolved
+  SimConnect client: `FMS module: installed 0.1.0 at D:\...\Community\magenta-bridge-module`, or
+  a warning saying FMS1/FMS2 are inert, with a one-click **Install the FMS module** link beneath.
+  Previously the only indication was the first-run card, which disappears once the module is
+  installed - so there was no way to confirm it from inside the app.
+- The status is cached for three seconds; it is read on every window refresh and would otherwise
+  hit the Community folder dozens of times a second.
+- Self-test: 49 checks, up from 47.
 ## 0.2.1 - 2026-11-12
 
 - After installing the FMS module the app now says to **restart MSFS**. It previously said

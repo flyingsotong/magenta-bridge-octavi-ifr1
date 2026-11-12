@@ -1017,6 +1017,7 @@ public sealed class PanelEngine : IDisposable
             $"device      : {(s.DeviceConnected ? s.DeviceName : "not connected")}",
             $"simconnect  : {(s.SimConnected ? "connected" : "not connected")}",
             $"client      : {s.SimClientPath} ({s.SimClientVersion})",
+            $"module      : {ModuleInstaller.StatusLine().Replace("FMS module: ", "")}",
             $"mode        : {s.Mode} {s.ModeLabel}  shift={s.Shift}",
             $"field       : 0x{s.Field:X8}",
             $"dials       : {s.Dial1} / {s.Dial2}",

@@ -120,11 +120,43 @@ public static class ModuleInstaller
 
     public readonly record struct Presence(bool Installed, string Status, string? Path);
 
+    // The status is shown in the window and refreshed on every engine update, so reading the
+    // Community folder each time would hit the disk dozens of times a second.
+    private static Presence _cachedPresence;
+    private static DateTime _cachedAt;
+    private static readonly TimeSpan CacheFor = TimeSpan.FromSeconds(3);
+
+    /// <summary>Drops the cached answer, after an install or a removal.</summary>
+    public static void Invalidate()
+    {
+        _cachedAt = default;
+    }
+
     /// <summary>
     /// Looks for an installed copy. Reports a stale one as stale rather than installed, so an
     /// upgrade is offered instead of silently skipped.
     /// </summary>
     public static Presence Check()
+    {
+        if (DateTime.UtcNow - _cachedAt < CacheFor) return _cachedPresence;
+
+        _cachedPresence = CheckUncached();
+        _cachedAt = DateTime.UtcNow;
+        return _cachedPresence;
+    }
+
+    /// <summary>One line for the diagnostics panel: installed where, or what to do about it.</summary>
+    public static string StatusLine()
+    {
+        var presence = Check();
+        if (presence.Installed) return $"FMS module: {presence.Status} at {presence.Path}";
+
+        return presence.Path == null
+            ? "FMS module: not installed, and no Community folder was found"
+            : $"FMS module: {presence.Status} - FMS1/FMS2 are inert until it is installed";
+    }
+
+    private static Presence CheckUncached()
     {
         var folder = InstallPath();
         if (folder == null)
@@ -231,6 +263,7 @@ public static class ModuleInstaller
         {
             Directory.Delete(folder, recursive: true);
             Log.Info($"FMS module removed from {folder}");
+            Invalidate();
             return null;
         }
         catch (Exception ex)

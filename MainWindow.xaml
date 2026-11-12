@@ -353,6 +353,13 @@
             <StackPanel x:Name="DiagnosticsBody" Visibility="Collapsed" Margin="0,10,0,0">
               <TextBlock x:Name="ClientText" Text="SimConnect client: -" FontSize="11"
                          TextTrimming="CharacterEllipsis" />
+              <TextBlock x:Name="ModuleText" Text="FMS module: -" FontSize="11" Margin="0,4,0,0"
+                         TextTrimming="CharacterEllipsis" />
+              <TextBlock x:Name="ModuleInstallLink" Text="Install the FMS module" FontSize="9"
+                         Margin="0,4,0,0" Cursor="Hand" Visibility="Collapsed"
+                         Foreground="{DynamicResource Brush.Link}" TextDecorations="Underline"
+                         MouseLeftButtonUp="OnInstallModuleClick"
+                         ToolTip="Writes the module into the simulator's Community folder" />
               <TextBlock x:Name="ErrorText" Text="" FontSize="11" Margin="0,6,0,0"
                          Foreground="{DynamicResource Brush.Warn}" TextWrapping="Wrap" />
               <TextBlock x:Name="SelfTestText" Text="" FontSize="11" Margin="0,8,0,0"

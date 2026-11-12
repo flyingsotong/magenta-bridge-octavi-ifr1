@@ -105,6 +105,8 @@ public partial class MainWindow : Window
         SimDot.Fill = (Brush)FindResource(s.SimConnected ? "Brush.Good" : "Brush.Bad");
         SimText.Text = s.SimConnected ? "MSFS connected" : "MSFS";
 
+        SyncModuleStatus();
+
         ModeText.Text = s.Mode >= 0 ? $"mode {s.Mode + 1} of 8" : "press any button";
         ModeLabelText.Text = s.Mode >= 0 ? s.ModeLabel : string.Empty;
         // The chip is always present so the feature is discoverable; it only lights when armed.
@@ -698,9 +700,41 @@ public partial class MainWindow : Window
             "reads the Community folder at startup, so FMS1 and FMS2 stay inert until you do.";
         ModuleInstallButton.Visibility = Visibility.Collapsed;
         ModuleStrip.Visibility = Visibility.Visible;
+        SyncModuleStatus();
     }
 
     private void OnRecheckModule(object sender, RoutedEventArgs e) => RefreshModuleStrip();
+
+    /// <summary>
+    /// The persistent answer to "is the module installed?", in Diagnostics beside the resolved
+    /// SimConnect client. The strip above is a first-run prompt and disappears once installed;
+    /// this line always says where things stand, and offers the install when it is missing.
+    /// </summary>
+    private void SyncModuleStatus()
+    {
+        try
+        {
+            var presence = ModuleInstaller.Check();
+
+            ModuleText.Text = ModuleInstaller.StatusLine();
+            ModuleText.Foreground = (Brush)FindResource(presence.Installed ? "Brush.Muted" : "Brush.Warn");
+
+            // Offer the install whenever it is missing and we know where Community is.
+            ModuleInstallLink.Visibility = presence is { Installed: false, Path: not null }
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+        }
+        catch (Exception ex)
+        {
+            ModuleText.Text = $"FMS module: status unavailable ({ex.Message})";
+        }
+    }
+
+    private void OnInstallModuleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        OnInstallModule(sender, new RoutedEventArgs());
+        SyncModuleStatus();
+    }
 
     /// <summary>
     /// Closes the vendor plug-in on the user's behalf. It has no documented exit API, so this

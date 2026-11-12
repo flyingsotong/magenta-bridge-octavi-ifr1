@@ -299,6 +299,15 @@ public static class ReplayHarness
             try { File.Delete(scratch + ".v6.bak"); } catch { }
         }
 
+        var moduleLine = ModuleInstaller.StatusLine();
+        Check("the module status line always says something actionable",
+            moduleLine.StartsWith("FMS module: ", StringComparison.Ordinal) && moduleLine.Length > 20,
+            moduleLine);
+
+        // The status is read on every UI refresh, so the cached answer must be stable and fast.
+        Check("the module status is cached and repeatable",
+            ModuleInstaller.StatusLine() == moduleLine,
+            $"first \"{moduleLine}\", second \"{ModuleInstaller.StatusLine()}\"");
         var summary = failures == 0
             ? $"ALL {lines.Count(l => l.StartsWith("PASS"))} CHECKS PASSED"
             : $"{failures} CHECK(S) FAILED";
