@@ -40,7 +40,8 @@ The download is self-contained — no .NET runtime installation needed.
 
 1. Close Octavi's own plug-in if it is running (see *Two programs, one panel*).
 2. Start MSFS and load a flight.
-3. Run `MagentaBridge-OctaviIFR1.exe`.
+3. Run `MagentaBridge-OctaviIFR1.exe`. If the FMS card appears, press **Install the module** and
+   restart MSFS once — that is the only setup step, and nothing is downloaded.
 
 The window opens and a tray icon appears. Closing the window quits; **Hide** sends it to the
 tray. Everything relevant — which panel is connected, whether the sim is running, what the
@@ -120,6 +121,8 @@ them, so this bridge ships a 15 KB WASM module that does exactly that and nothin
 - You never download it separately. It is embedded in the executable.
 - If it is missing, a card in the window offers **Install the module**. One click writes three
   files into your simulator's Community folder, found by reading the sim's own `UserCfg.opt`.
+- **Then restart MSFS.** The simulator reads the Community folder once, at startup, so FMS1 and
+  FMS2 do nothing until it is restarted. The app says this when the install finishes.
 - From a console: `MagentaBridge-OctaviIFR1.exe --module status`, `--module install`,
   `--module remove`.
 - To uninstall, delete `Community\magenta-bridge-module`. Nothing runs in the background, there

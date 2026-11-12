@@ -3,6 +3,12 @@
 All notable changes to Magenta Bridge for Octavi IFR-1. This project has no vendor code and no
 MobiFlight dependency; the entries below are about what the panel can actually do.
 
+## 0.2.1 - 2026-11-12
+
+- After installing the FMS module the app now says to **restart MSFS**. It previously said
+  nothing, and since the simulator reads the Community folder only at startup, FMS1 and FMS2
+  stayed inert until the next launch - which read as the app being broken.
+- README: the same step is spelled out in *Run it* and in *The FMS module*.
 ## 0.2.0 — 2026-11-11
 
 **FMS1 and FMS2 work.** The four GNS knobs and the CDI/OBS/MSG/FPL/VNAV/PROC/ENT/MENU/CLR/Direct

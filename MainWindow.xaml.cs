@@ -689,7 +689,15 @@ public partial class MainWindow : Window
             return;
         }
 
-        RefreshModuleStrip();
+        // Do not just hide the card: the simulator reads Community once, at startup, so the
+        // module does nothing until MSFS is restarted. A user who is not told that installs
+        // the module, tries FMS, sees nothing, and concludes the app is broken.
+        var folder = ModuleInstaller.InstallPath() ?? "the simulator's Community folder";
+        ModuleStripText.Text =
+            $"Installed to {folder}. Now restart MSFS so it picks the module up — the simulator " +
+            "reads the Community folder at startup, so FMS1 and FMS2 stay inert until you do.";
+        ModuleInstallButton.Visibility = Visibility.Collapsed;
+        ModuleStrip.Visibility = Visibility.Visible;
     }
 
     private void OnRecheckModule(object sender, RoutedEventArgs e) => RefreshModuleStrip();
