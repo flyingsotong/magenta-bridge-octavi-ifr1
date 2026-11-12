@@ -113,10 +113,17 @@ press them on its own; the module below does it from inside the simulator. With 
 absent, the FMS modes' knobs and buttons do nothing — deliberately, and the window says so
 rather than pretending. The FMS **CDI** button works either way, via `TOGGLE_GPS_DRIVES_NAV1`.
 
-## The FMS module
+## The GPS add-on (the WASM module)
 
-The GNS530/430 bezel controls are the gauge's own events. Only code running inside MSFS can fire
-them, so this bridge ships a 15 KB WASM module that does exactly that and nothing else.
+**New to flight simulators? This is the only extra step, and it happens once.**
+
+The GNS530/430 - the GPS unit in the panel - has its own buttons: Direct To, MENU, CLR, OBS,
+PROC and so on. They are not ordinary simulator controls, so an outside program cannot press
+them; only something running *inside* the simulator can. Add-ons of that kind are called **WASM
+modules**, which is a fussy name for a small file the simulator loads when it starts.
+
+Magenta Bridge includes one. It is about 15 KB, already inside the app you downloaded, and there
+is nothing else to fetch.
 
 - You never download it separately. It is embedded in the executable.
 - If it is missing, a card in the window offers **Install the module**. One click writes three

@@ -22,7 +22,7 @@ public partial class MainWindow : Window
         DeviceSubtitle.Text = Core.ProductInfo.DeviceName;
 
         // Show just the filename; the full path belongs in a tooltip, not in the footer.
-        VersionText.Text = "v" + (typeof(MainWindow).Assembly.GetName().Version?.ToString(2) ?? "0.1");
+        VersionText.Text = "v" + (typeof(MainWindow).Assembly.GetName().Version?.ToString(3) ?? "0.2.0");
 
         _engine.Changed += () => Dispatcher.BeginInvoke(new Action(Refresh));
         Log.Line += OnLogLine;
@@ -696,8 +696,9 @@ public partial class MainWindow : Window
         // the module, tries FMS, sees nothing, and concludes the app is broken.
         var folder = ModuleInstaller.InstallPath() ?? "the simulator's Community folder";
         ModuleStripText.Text =
-            $"Installed to {folder}. Now restart MSFS so it picks the module up — the simulator " +
-            "reads the Community folder at startup, so FMS1 and FMS2 stay inert until you do.";
+            $"Added to {folder}. Now quit MSFS completely - not back to the menu - and start it " +
+            "again. The simulator only reads that folder when it starts, so the GPS buttons stay " +
+            "dead until you do. Then: press FMS1, then Direct To.";
         ModuleInstallButton.Visibility = Visibility.Collapsed;
         ModuleStrip.Visibility = Visibility.Visible;
         SyncModuleStatus();

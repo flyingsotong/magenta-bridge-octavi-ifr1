@@ -149,11 +149,11 @@ public static class ModuleInstaller
     public static string StatusLine()
     {
         var presence = Check();
-        if (presence.Installed) return $"FMS module: {presence.Status} at {presence.Path}";
+        if (presence.Installed) return $"GPS add-on: installed and ready, at {presence.Path}";
 
         return presence.Path == null
-            ? "FMS module: not installed, and no Community folder was found"
-            : $"FMS module: {presence.Status} - FMS1/FMS2 are inert until it is installed";
+            ? "GPS add-on: not installed, and the simulator's folder was not found - start MSFS once, then press Check"
+            : "GPS add-on: not installed - the GNS530/430 buttons (FMS1/FMS2) will do nothing until it is";
     }
 
     private static Presence CheckUncached()

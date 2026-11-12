@@ -91,8 +91,14 @@
             <TextBlock Text="WELCOME" FontSize="9" Foreground="{DynamicResource Brush.Dim}" />
             <TextBlock Text="An independent alternative to Octavi's own plug-in. Your IFR-1 talks to MSFS directly - no MobiFlight."
                        FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,6,0,0" />
-            <TextBlock Text="The eight context buttons pick the mode; press the rotary knob to shift. Start with Test your panel to check every control."
-                       FontSize="11" Foreground="{DynamicResource Brush.Muted}" TextWrapping="Wrap" Margin="0,4,0,0" />
+            <StackPanel Margin="0,8,0,0">
+              <TextBlock Text="1.  Plug in the IFR-1. If Octavi's own plug-in is running, close it - the panel only talks to one program."
+                         FontSize="11" Foreground="{DynamicResource Brush.Muted}" TextWrapping="Wrap" />
+              <TextBlock Text="2.  If a card offers the GPS add-on, install it, then quit MSFS completely and start it again. One time only."
+                         FontSize="11" Foreground="{DynamicResource Brush.Muted}" TextWrapping="Wrap" Margin="0,5,0,0" />
+              <TextBlock Text="3.  Press Test your panel to check every control before you fly."
+                         FontSize="11" Foreground="{DynamicResource Brush.Muted}" TextWrapping="Wrap" Margin="0,5,0,0" />
+            </StackPanel>
             <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
               <Button x:Name="PrimaryWelcome" Style="{StaticResource PrimaryButton}" Click="OnVerifyPanel"
                       Margin="0,0,8,0">
@@ -108,14 +114,14 @@
         <Border x:Name="ModuleStrip" Style="{StaticResource Card}" Visibility="Collapsed"
                 BorderBrush="{DynamicResource Brush.Accent}">
           <StackPanel>
-            <TextBlock Text="ONE SMALL MODULE FOR FMS MODE" FontSize="10"
+            <TextBlock Text="ONE-TIME SETUP - THE GPS BUTTONS" FontSize="10"
                        Foreground="{DynamicResource Brush.Accent}" />
             <TextBlock x:Name="ModuleStripText"
-                       Text="FMS1 and FMS2 press the GNS530's own buttons, and only a small module inside the simulator can do that."
+                       Text="The GNS530/430 has its own buttons - Direct To, MENU, CLR, OBS and the rest. Only something running inside the simulator can press them, so Magenta Bridge installs a tiny add-on to do it. It is about 15 KB, already inside this app, and nothing is downloaded."
                        FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0" />
             <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-              <Button x:Name="ModuleInstallButton" Content="Install the module" Click="OnInstallModule" Margin="0,0,8,0" />
-              <Button Content="Check again" Click="OnRecheckModule" Margin="0" />
+              <Button x:Name="ModuleInstallButton" Content="Install the GPS add-on" Click="OnInstallModule" Margin="0,0,8,0" />
+              <Button Content="Not now" Click="OnRecheckModule" Margin="0" />
             </StackPanel>
           </StackPanel>
         </Border>
@@ -353,9 +359,10 @@
             <StackPanel x:Name="DiagnosticsBody" Visibility="Collapsed" Margin="0,10,0,0">
               <TextBlock x:Name="ClientText" Text="SimConnect client: -" FontSize="11"
                          TextTrimming="CharacterEllipsis" />
-              <TextBlock x:Name="ModuleText" Text="FMS module: -" FontSize="11" Margin="0,4,0,0"
-                         TextTrimming="CharacterEllipsis" />
-              <TextBlock x:Name="ModuleInstallLink" Text="Install the FMS module" FontSize="9"
+              <TextBlock x:Name="ModuleText" Text="GPS add-on: -" FontSize="11" Margin="0,4,0,0"
+                         TextTrimming="CharacterEllipsis"
+                         ToolTip="A small add-on inside the simulator that can press the GNS530/430 own buttons. To remove it later, delete that folder; nothing else is left behind." />
+              <TextBlock x:Name="ModuleInstallLink" Text="Install the GPS add-on" FontSize="9"
                          Margin="0,4,0,0" Cursor="Hand" Visibility="Collapsed"
                          Foreground="{DynamicResource Brush.Link}" TextDecorations="Underline"
                          MouseLeftButtonUp="OnInstallModuleClick"

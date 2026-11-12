@@ -301,7 +301,7 @@ public static class ReplayHarness
 
         var moduleLine = ModuleInstaller.StatusLine();
         Check("the module status line always says something actionable",
-            moduleLine.StartsWith("FMS module: ", StringComparison.Ordinal) && moduleLine.Length > 20,
+            moduleLine.StartsWith("GPS add-on: ", StringComparison.Ordinal) && moduleLine.Length > 20,
             moduleLine);
 
         // The status is read on every UI refresh, so the cached answer must be stable and fast.

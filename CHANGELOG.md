@@ -3,6 +3,24 @@
 All notable changes to Magenta Bridge for Octavi IFR-1. This project has no vendor code and no
 MobiFlight dependency; the entries below are about what the panel can actually do.
 
+## 0.2.3 - 2026-11-12
+
+Written for someone who has never used a flight simulator before.
+
+- **The version is now the full number** in the header and in Settings - \0.2.3\, not \0.2\.
+- **The add-on is called what it is:** *the GPS add-on*. The card is headed *ONE-TIME SETUP - THE
+  GPS BUTTONS* and says, in plain words, that the GNS530/430 has buttons only something inside
+  the simulator can press, that it is 15 KB and already inside the app, and that nothing is
+  downloaded.
+- **After installing, it says what to do next**: quit MSFS completely rather than return to the
+  menu, start it again, then press FMS1 and Direct To. Removing it later is deleting that folder,
+  which the Diagnostics line explains on hover.
+- **The welcome card is a three-line start-up list**: plug in the panel, do the one-time add-on
+  step, test the panel before flying.
+- Diagnostics says \GPS add-on: installed and ready\ or, in warning colour, that the GPS buttons
+  will do nothing, with the install link underneath.
+- README: the section is now *The GPS add-on (the WASM module)* and opens with what a WASM
+  module is in one paragraph, without assuming the reader knows.
 ## 0.2.2 - 2026-11-12
 
 - The FMS module's status is now **always visible**, in Diagnostics next to the resolved
