@@ -193,6 +193,12 @@ MIT. See [LICENSE](LICENSE). Use it, fork it, ship it, ignore it — no permissi
 No Octavi code, binaries or artwork are included. The HID protocol was recovered by
 observation and reverse engineering for interoperability.
 
+## Supporting this
+
+It is free and it stays free. If it saved you a fight with the plug-in, there is a tip jar at
+[magentadebrief.com/donate](https://magentadebrief.com/donate/): one-off card payments, no
+subscription, and nothing here is ever gated behind a payment.
+
 ## Feedback
 
 Bugs and comments: <alan@magentadebrief.com>. A Magenta Debrief tool — free, no telemetry.
