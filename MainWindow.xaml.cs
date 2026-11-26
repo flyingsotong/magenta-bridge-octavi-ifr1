@@ -888,24 +888,12 @@ public partial class MainWindow : Window
         catch (Exception ex) { Log.Warn($"could not save the config: {ex.Message}"); }
     }
 
-    /// <summary>Opens the user's mail client with a pre-filled subject, so reports arrive useful.</summary>
+    /// <summary>Opens the feedback page with this build's version filled in, so a reply arrives useful.</summary>
     private void OnSendFeedback(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
         var version = typeof(MainWindow).Assembly.GetName().Version?.ToString(3) ?? "1.0.0";
-
-        try
-        {
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = $"mailto:alan@magentadebrief.com?subject=Magenta%20Bridge%20feedback%20(v{version})",
-                UseShellExecute = true,
-            });
-            Log.Info("opened the mail client for feedback");
-        }
-        catch (Exception ex)
-        {
-            Log.Warn($"could not open a mail client: {ex.Message}");
-        }
+        OpenUrl($"https://magentadebrief.com/feedback/?app=octavi-ifr1&v={version}");
+        Log.Info("opened the feedback page");
     }
 
     private void OnMinimise(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
