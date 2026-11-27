@@ -65,10 +65,14 @@ Being a replacement isn't a feature, so here is what is actually different.
 | **FMS (GNS530/430 buttons and knobs)** | Needs MobiFlight installed | Works — the app installs one 15 KB module, nothing else |
 | **Licence / telemetry** | Closed, unknown | MIT, no telemetry |
 
-**What the official plug-in still does better:** nothing that needs MobiFlight. Its FMS support
-reaches the GNS knobs and softkeys only by talking to MobiFlight's module; this bridge now does
-the same job through its own, which the app installs for you. If you already run MobiFlight for
-other hardware, its route still works — you just don't need it here.
+**Where the official plug-in is still the simpler answer:** it is one installer and nothing else
+to press. Its FMS layer reaches the GNS knobs and softkeys through MobiFlight's event module, which
+the installer puts in place, and once that module is there the G1000 flight-plan buttons work.
+
+If those buttons do nothing, re-run the plug-in installer with **overwrite MobiFlight event module**
+ticked, then restart the simulator. That is the step people miss, it is not a fault in the panel,
+and it is worth checking before you look for another client. This bridge exists for the differences
+in the table above, not because the plug-in is broken.
 
 ## What works
 
